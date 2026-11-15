@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shop Tracker</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--tx:#1b1f2a;--mut:#6b7280;--ac:#1f4e9c;--acx:#fff;--bd:#e3e6ec;--ok:#1a7f4b;--bad:#c0392b;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151c;--card:#1b202b;--tx:#e8ebf2;--mut:#9aa3b2;--ac:#6ea1ff;--acx:#0d1220;--bd:#2a3140;--ok:#4ac98a;--bad:#ff7a6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12151c;--card:#1b202b;--tx:#e8ebf2;--mut:#9aa3b2;--ac:#6ea1ff;--acx:#0d1220;--bd:#2a3140;--ok:#4ac98a;--bad:#ff7a6b;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding-bottom:84px}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 6px;max-width:720px;margin:0 auto}
+h1{font-size:20px;margin:0}h2{font-size:15px;margin:0 0 10px}
+#badge{font-size:11px;color:var(--mut);border:1px solid var(--bd);border-radius:99px;padding:2px 8px}
+main{max-width:720px;margin:0 auto;padding:0 12px}
+.tab{display:none}.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin:10px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.k{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.k small{display:block;color:var(--mut);font-size:12px}.k b{font-size:19px}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{font:inherit;cursor:pointer}
+.btn{margin-top:12px;width:100%;padding:11px;border:0;border-radius:8px;background:var(--ac);color:var(--acx);font-weight:600}
+.row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--bd)}
+.row:first-child{border-top:0}.row>div:first-child{flex:1;min-width:0}
+.row small{display:block;color:var(--mut)}.amt{font-weight:600;white-space:nowrap}
+.x{border:1px solid var(--bd);background:none;color:var(--mut);border-radius:6px;padding:4px 8px;font-size:12px}
+.bar{height:8px;border-radius:4px;background:var(--ac);margin:3px 0 8px}
+.top{display:flex;gap:8px;margin:8px 0}.top select{flex:1}.top input{flex:1}
+.empty{color:var(--mut);font-size:13px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:10px 2px;font-size:12px}
+nav button.on{color:var(--ac);font-weight:700}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;background:var(--tx);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;display:none}
+summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<header><h1 id="ttl">My Shop</h1><span id="badge">…</span></header>
+<main>
+<section id="t-dash" class="tab on">
+  <div class="top"><select id="pm"><option value="month">Month</option><option value="year">Year</option><option value="all">All time</option></select><input type="month" id="pp"></div>
+  <div class="grid" id="kpis"></div>
+  <div class="card"><h2>Revenue by stream</h2><div id="streams"></div></div>
+  <div class="card"><h2>Partners: ownership and profit share</h2><div id="partners"></div></div>
+  <div class="card"><h2>Pickup businesses</h2><div id="pbiz"></div></div>
+  <details class="card"><summary>Settings</summary>
+    <label>Business name</label><input id="cf-biz">
+    <div class="two"><div><label>Partner 1</label><input id="cf-p1"></div><div><label>Partner 2</label><input id="cf-p2"></div></div>
+    <label>Currency label</label><input id="cf-cur">
+    <button class="btn" id="cf-save">Save settings</button>
+  </details>
+</section>
+
+<section id="t-sales" class="tab"><div class="card"><h2>Add a sale</h2>
+  <div class="two"><div><label>Date</label><input type="date" id="s-date"></div><div><label>Channel</label><select id="s-ch"></select></div></div>
+  <label>Description (optional)</label><input id="s-desc" placeholder="e.g. daily till total">
+  <label>Amount</label><input id="s-amt" type="number" inputmode="decimal">
+  <button class="btn" id="s-add">Add sale</button></div>
+  <div class="card"><h2>Recent sales</h2><div id="s-list"></div></div></section>
+
+<section id="t-pick" class="tab">
+  <div class="card"><h2>Log parcels</h2>
+  <label>Business</label><select id="p-biz"></select>
+  <div class="two"><div><label>Date</label><input type="date" id="p-date"></div><div><label>Parcels</label><input id="p-qty" type="number" inputmode="numeric"></div></div>
+  <label>Fee per parcel</label><input id="p-fee" type="number" inputmode="decimal">
+  <button class="btn" id="p-add">Add to log</button></div>
+  <div class="card"><h2>Recent parcels</h2><div id="p-list"></div></div>
+  <div class="card"><h2>Enrol a business</h2>
+  <label>Business name</label><input id="b-name">
+  <label>Fee per parcel</label><input id="b-fee" type="number" inputmode="decimal">
+  <button class="btn" id="b-add">Enrol business</button></div>
+  <div class="card"><h2>Businesses</h2><div id="b-list"></div></div></section>
+
+<section id="t-cap" class="tab">
+  <div class="card"><h2>Ownership</h2><div id="c-sum"></div></div>
+  <div class="card"><h2>Add a contribution</h2>
+  <div class="two"><div><label>Date</label><input type="date" id="c-date"></div><div><label>Partner</label><select id="c-partner"></select></div></div>
+  <label>What it covered</label><input id="c-desc" placeholder="e.g. opening stock">
+  <div class="two"><div><label>Category</label><select id="c-cat"></select></div><div><label>Amount</label><input id="c-amt" type="number" inputmode="decimal"></div></div>
+  <button class="btn" id="c-add">Add contribution</button></div>
+  <div class="card"><h2>Contributions</h2><div id="c-list"></div></div></section>
+
+<section id="t-exp" class="tab"><div class="card"><h2>Add an expense</h2>
+  <div class="two"><div><label>Date</label><input type="date" id="e-date"></div><div><label>Category</label><select id="e-cat"></select></div></div>
+  <label>Description (optional)</label><input id="e-desc">
+  <label>Amount</label><input id="e-amt" type="number" inputmode="decimal">
+  <button class="btn" id="e-add">Add expense</button></div>
+  <div class="card"><h2>Recent expenses</h2><div id="e-list"></div></div></section>
+</main>
+<div id="toast"></div>
+<nav id="nav"><button data-t="dash" class="on">Dashboard</button><button data-t="sales">Sales</button><button data-t="pick">Pickup</button><button data-t="cap">Capital</button><button data-t="exp">Expenses</button></nav>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>Number(v)||0;
+const sum=a=>a.reduce((t,x)=>t+x,0);
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+const COLS=['capital','sales','expenses','businesses','parcels'];
+const CH=['Walk-in','Online'];
+const CAPCAT=['Stock / inventory','Shelving & fixtures','Equipment','Rent & deposit','Licences & permits','Renovation & setup','Marketing & signage','Working cash','Other'];
+const EXPCAT=['Rent','Utilities','Wages','Transport','Stock purchases','Packaging','Internet & phone','Marketing','Licences','Repairs','Other'];
+const DEF={biz:'My Shop',cur:'KES',p1:'Partner 1',p2:'Partner 2'};
+let S={cfg:{...DEF},capital:[],sales:[],expenses:[],businesses:[],parcels:[]};
+let PER={mode:'month',m:today().slice(0,7)};
+let dbh=null;
+const LK='shop_tracker_v1';
+const fmt=n=>num(n).toLocaleString('en-US',{maximumFractionDigits:0});
+const money=n=>esc(S.cfg.cur||'')+' '+fmt(n);
+
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2500)}
+function saveLocal(){try{localStorage.setItem(LK,JSON.stringify(S))}catch(e){}}
+const store={
+  add(c,o){o.ts=Date.now();
+    if(dbh){dbh.collection(c).add(o).catch(e=>toast('Could not save: '+(e&&e.message||'error')));}
+    else{o.id=o.ts+''+Math.floor(Math.random()*1e4);S[c].push(o);saveLocal();render()}},
+  upd(c,id,p){
+    if(dbh){dbh.collection(c).doc(id).update(p).catch(e=>toast('Could not save'));}
+    else{const o=S[c].find(x=>x.id===id);if(o)Object.assign(o,p);saveLocal();render()}},
+  del(c,id){
+    if(dbh){dbh.collection(c).doc(id).delete().catch(e=>toast('Could not delete'));}
+    else{S[c]=S[c].filter(x=>x.id!==id);saveLocal();render()}},
+  cfg(o){
+    if(dbh){dbh.doc('config/main').set(o).catch(e=>toast('Could not save settings'));}
+    else{S.cfg=o;saveLocal();render()}}
+};
+
+function fillSel(id,opts){const el=$(id);const k=JSON.stringify(opts);if(el.dataset.k===k)return;
+  const cur=el.value;el.innerHTML=opts.map(o=>'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>').join('');
+  el.dataset.k=k;if(opts.some(o=>o[0]===cur))el.value=cur}
+const inP=d=>{d=d||'';return PER.mode==='all'||(PER.mode==='year'?d.slice(0,4)===PER.m.slice(0,4):d.slice(0,7)===PER.m)};
+const byNew=(a,b)=>(b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0);
+function rows(el,list,col,main,sub,amt){
+  const r=list.slice().sort(byNew).slice(0,50);
+  $(el).innerHTML=r.length?r.map(x=>'<div class="row"><div><b>'+esc(main(x))+'</b><small>'+esc(sub(x))+'</small></div><div class="amt">'+amt(x)+'</div><button class="x" data-del="'+col+':'+esc(x.id)+'">Delete</button></div>').join('')+(list.length>50?'<div class="empty">Showing latest 50 of '+list.length+'.</div>':''):'<div class="empty">Nothing logged yet.</div>';
+}
+function render(){
+  const c=S.cfg,P=[['p1',c.p1],['p2',c.p2]];
+  $('ttl').textContent=c.biz||'My Shop';
+  $('badge').textContent=dbh?'Shared':'This device only';
+  $('badge').title=dbh?'Saved to the shared database':'Not signed in: data is saved in this browser only';
+  fillSel('s-ch',CH.map(x=>[x,x]));fillSel('c-partner',P);
+  fillSel('c-cat',CAPCAT.map(x=>[x,x]));fillSel('e-cat',EXPCAT.map(x=>[x,x]));
+  const act=S.businesses.filter(b=>b.status!=='Paused').sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  fillSel('p-biz',act.map(b=>[b.id,b.name]));
+  const pn=k=>k==='p1'?c.p1:c.p2;
+  // dashboard
+  const walk=sum(S.sales.filter(x=>x.channel==='Walk-in'&&inP(x.date)).map(x=>num(x.amount)));
+  const onl=sum(S.sales.filter(x=>x.channel==='Online'&&inP(x.date)).map(x=>num(x.amount)));
+  const pk=S.parcels.filter(x=>inP(x.date));
+  const pick=sum(pk.map(x=>num(x.qty)*num(x.fee)));
+  const rev=walk+onl+pick,ex=sum(S.expenses.filter(x=>inP(x.date)).map(x=>num(x.amount))),net=rev-ex;
+  const capT=sum(S.capital.map(x=>num(x.amount)));
+  $('kpis').innerHTML=[['Total capital',money(capT),''],['Revenue',money(rev),''],['Expenses',money(ex),''],['Net profit',money(net),net<0?'neg':'pos']]
+    .map(k=>'<div class="k"><small>'+k[0]+'</small><b class="'+k[2]+'">'+k[1]+'</b></div>').join('');
+  const mx=Math.max(walk,onl,pick,1);
+  $('streams').innerHTML=[['Walk-in',walk],['Online',onl],['Pickup fees',pick]].map(s=>'<div style="display:flex;justify-content:space-between"><span>'+s[0]+'</span><b>'+money(s[1])+'</b></div><div class="bar" style="width:'+Math.round(s[1]/mx*100)+'%"></div>').join('');
+  $('partners').innerHTML=P.map(p=>{const a=sum(S.capital.filter(x=>x.partner===p[0]).map(x=>num(x.amount)));const pc=capT?a/capT:0;
+    return '<div class="row"><div><b>'+esc(p[1])+'</b><small>'+money(a)+' contributed, '+(pc*100).toFixed(1)+'%</small></div><div class="amt '+(net<0?'neg':'')+'">'+money(net*pc)+'</div></div>'}).join('')+'<div class="empty">Profit share = net profit for the selected period x ownership %.</div>';
+  const g={};pk.forEach(x=>{const k=x.name||'Unknown';g[k]=g[k]||{q:0,r:0};g[k].q+=num(x.qty);g[k].r+=num(x.qty)*num(x.fee)});
+  const gl=Object.entries(g).sort((a,b)=>b[1].r-a[1].r);
+  $('pbiz').innerHTML=gl.length?gl.map(e=>'<div class="row"><div><b>'+esc(e[0])+'</b><small>'+e[1].q+' parcels</small></div><div class="amt">'+money(e[1].r)+'</div></div>').join(''):'<div class="empty">No pickup activity in this period. Active businesses enrolled: '+act.length+'.</div>';
+  // lists
+  rows('s-list',S.sales,'sales',x=>x.channel,x=>x.date+(x.desc?' · '+x.desc:''),x=>money(x.amount));
+  rows('p-list',S.parcels,'parcels',x=>x.name,x=>x.date+' · '+x.qty+' parcels at '+fmt(x.fee),x=>money(num(x.qty)*num(x.fee)));
+  rows('c-list',S.capital,'capital',x=>(pn(x.partner)||'')+' · '+x.cat,x=>x.date+(x.desc?' · '+x.desc:''),x=>money(x.amount));
+  rows('e-list',S.expenses,'expenses',x=>x.cat,x=>x.date+(x.desc?' · '+x.desc:''),x=>money(x.amount));
+  $('b-list').innerHTML=S.businesses.length?S.businesses.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'')).map(b=>'<div class="row"><div><b>'+esc(b.name)+'</b><small>'+esc(b.status||'Active')+' · fee '+fmt(b.fee)+' per parcel · since '+esc(b.date||'')+'</small></div><button class="x" data-tog="'+esc(b.id)+'">'+(b.status==='Paused'?'Activate':'Pause')+'</button><button class="x" data-del="businesses:'+esc(b.id)+'">Delete</button></div>').join(''):'<div class="empty">No businesses enrolled yet.</div>';
+  $('c-sum').innerHTML='<div class="row"><div><b>Total capital</b></div><div class="amt">'+money(capT)+'</div></div>'+P.map(p=>{const a=sum(S.capital.filter(x=>x.partner===p[0]).map(x=>num(x.amount)));return '<div class="row"><div><b>'+esc(p[1])+'</b><small>'+(capT?(a/capT*100).toFixed(1):'0.0')+'% ownership</small></div><div class="amt">'+money(a)+'</div></div>'}).join('');
+  if(document.activeElement.tagName!=='INPUT'){$('cf-biz').value=c.biz;$('cf-p1').value=c.p1;$('cf-p2').value=c.p2;$('cf-cur').value=c.cur}
+}
+function need(ok,msg){if(!ok)toast(msg);return ok}
+$('s-add').onclick=()=>{const a=num($('s-amt').value),d=$('s-date').value;if(!need(a>0&&d,'Enter a date and an amount'))return;
+  store.add('sales',{date:d,channel:$('s-ch').value,desc:$('s-desc').value.trim(),amount:a});$('s-amt').value='';$('s-desc').value=''};
+$('e-add').onclick=()=>{const a=num($('e-amt').value),d=$('e-date').value;if(!need(a>0&&d,'Enter a date and an amount'))return;
+  store.add('expenses',{date:d,cat:$('e-cat').value,desc:$('e-desc').value.trim(),amount:a});$('e-amt').value='';$('e-desc').value=''};
+$('c-add').onclick=()=>{const a=num($('c-amt').value),d=$('c-date').value;if(!need(a>0&&d,'Enter a date and an amount'))return;
+  store.add('capital',{date:d,partner:$('c-partner').value,cat:$('c-cat').value,desc:$('c-desc').value.trim(),amount:a});$('c-amt').value='';$('c-desc').value=''};
+$('b-add').onclick=()=>{const n=$('b-name').value.trim();if(!need(n,'Enter the business name'))return;
+  store.add('businesses',{name:n,fee:num($('b-fee').value),status:'Active',date:today()});$('b-name').value='';$('b-fee').value=''};
+$('p-add').onclick=()=>{const b=S.businesses.find(x=>x.id===$('p-biz').value),q=num($('p-qty').value),d=$('p-date').value;
+  if(!need(b&&q>0&&d,'Pick a business, a date and the parcel count'))return;
+  store.add('parcels',{date:d,bid:b.id,name:b.name,qty:q,fee:num($('p-fee').value)});$('p-qty').value=''};
+$('p-biz').onchange=()=>{const b=S.businesses.find(x=>x.id===$('p-biz').value);if(b)$('p-fee').value=b.fee};
+$('cf-save').onclick=()=>{store.cfg({biz:$('cf-biz').value.trim()||DEF.biz,cur:$('cf-cur').value.trim(),p1:$('cf-p1').value.trim()||DEF.p1,p2:$('cf-p2').value.trim()||DEF.p2});toast('Settings saved')};
+$('pm').onchange=()=>{PER.mode=$('pm').value;$('pp').style.display=PER.mode==='all'?'none':'';render()};
+$('pp').onchange=()=>{if($('pp').value){PER.m=$('pp').value;render()}};
+$('nav').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.id==='t-'+b.dataset.t));window.scrollTo(0,0)};
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tog]');
+  if(t){const b=S.businesses.find(x=>x.id===t.dataset.tog);if(b)store.upd('businesses',b.id,{status:b.status==='Paused'?'Active':'Paused'});return}
+  const d=e.target.closest('[data-del]');if(!d)return;
+  if(!d.dataset.arm){d.dataset.arm='1';d.textContent='Tap to confirm';setTimeout(()=>{d.dataset.arm='';d.textContent='Delete'},3000);return}
+  const p=d.dataset.del.split(':');store.del(p[0],p[1])});
+
+['s-date','p-date','c-date','e-date'].forEach(i=>$(i).value=today());
+$('pp').value=PER.m;
+try{const l=JSON.parse(localStorage.getItem(LK)||'null');if(l)S={...S,...l,cfg:{...DEF,...(l.cfg||{})}}}catch(e){}
+render();
+
+async function connect(){
+  let db=null;
+  try{if(window.claude&&claude.use)db=await Promise.race([claude.use('db'),new Promise(r=>setTimeout(()=>r(null),8000))])}catch(e){}
+  if(!db)return;
+  dbh=db;S={cfg:{...DEF},capital:[],sales:[],expenses:[],businesses:[],parcels:[]};render();
+  COLS.forEach(c=>dbh.collection(c).onSnapshot(s=>{S[c]=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>toast('Could not load '+c)));
+  dbh.doc('config/main').onSnapshot(s=>{if(s.exists)S.cfg={...DEF,...s.data()};render()},e=>{});
+}
+connect();
+</script>
+</body>
+</html>
